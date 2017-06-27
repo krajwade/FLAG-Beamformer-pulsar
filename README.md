@@ -6,9 +6,11 @@ seven beams. The code can be found on GitHub.
 
 The way to install the code is as follows:
 
-1. clone the repo from the GitHub Repository () 
+1. clone the repo from the GitHub Repository (https://github.com/krajwade/FLAG-Beamformer-pulsar) 
 
-2. change the 
+2. change the bin directory if need be to where you want the binary files to be installed.
+
+3. Compile the code by running make in the folder with the Makefile.
 
 
 # Things to be done.
