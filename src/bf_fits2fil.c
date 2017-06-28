@@ -120,7 +120,6 @@ for (e=0; e<numFiles;e++){
   status=0;
 }
 
-nrows=5000;
 
 beam0 =(unsigned char*)malloc(sizeof(unsigned char)*TOT_CHANS*nrows*NUM_SAMPS_PER_BLOCK);
 beam1 =(unsigned char*)malloc(sizeof(unsigned char)*TOT_CHANS*nrows*NUM_SAMPS_PER_BLOCK);
@@ -136,7 +135,7 @@ chan_8bit = (unsigned char*)malloc(sizeof(unsigned char)*DATA_SIZE);
 /* Converting the spliced files to filterbank file for each beam */
  
  step_size=0;
- for(k=1; k<=nrows;k++){
+ for(k=1; k<nrows;k++){
     step_size = NUM_SAMPS_PER_BLOCK*TOT_CHANS*k;
     printf("nrow=%d\n",k);
     for (i=0; i<NUM_SAMPS_PER_BLOCK;i++){
@@ -251,7 +250,6 @@ chan_8bit = (unsigned char*)malloc(sizeof(unsigned char)*DATA_SIZE);
   strcpy(filename,globbuf.gl_pathv[0]);
 
   fits_open_file(&fptr, filename, READONLY, &status);
-
 
   rw_header(fptr,f1);
   rw_header(fptr,f2);

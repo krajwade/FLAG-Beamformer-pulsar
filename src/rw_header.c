@@ -35,7 +35,6 @@ int rw_header(fitsfile *fptr,FILE *fptr1)
   int  status=0,nkeys,ilen=0;
   char record[FLEN_CARD],headstring[1024],strval[1024];
   double keyval;
-  char pathname[128];
   int iTemp;
 
 
@@ -170,7 +169,6 @@ int GetMacIDFromName(char *pcObs)
   fwrite(&ilen,sizeof(ilen),1,fptr1);
   fwrite(strval,sizeof(char),ilen,fptr1);
 // writing to file
-  fits_close_file(fptr, &status);
   if (status){          /* print any error messages */
      fits_report_error(stderr, status);
      return(0);
