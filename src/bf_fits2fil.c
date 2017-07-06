@@ -6,6 +6,7 @@
 #include<glob.h>
 #include<float.h>
 #include"rw_header.h"
+#include<omp.h>
 #define NUM_PSTOKES  4
 #define NUM_CHANS  25
 #define NUM_BEAMS  7
@@ -38,12 +39,19 @@ void Float2Byte(float *pfbuf, int ilen,unsigned char *pcbuf){
 
  frange = fMax - fMin;
 
+// Change number of threads here
+// Devansh Agarwal, 05 July 2017
+// Parallelized requantization
+
+#pragma omp parallel num_threads(6)
+{
+#pragma omp for
  for (i = 0; i < ilen; ++i){
 
    pcbuf[i] = (unsigned char) roundf(((pfbuf[i]-fMin)/frange)*fIntMax);
  }
+}
  return;
-
 }
 
 /* Main code */

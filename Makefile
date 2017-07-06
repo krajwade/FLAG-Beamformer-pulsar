@@ -12,8 +12,10 @@ LFLAGS_MATH = -lm
 
 LFLAGS_FITSIO =  -L /usr/lib64/ -lcfitsio
 
+OPENMP= -fopenmp
+
 # Final compilation
 all: bf_fits2fil
 
 bf_fits2fil: $(SRCDIR)/bf_fits2fil.c $(SRCDIR)/rw_header.c
-	$(CC) $(CFLAGS) $^ $(LFLAGS_FITSIO) $(LFLAGS_MATH) -o $(BINDIR)/$@
+	$(CC) $(CFLAGS) $(OPENMP) $^ $(LFLAGS_FITSIO) $(LFLAGS_MATH) -o $(BINDIR)/$@
