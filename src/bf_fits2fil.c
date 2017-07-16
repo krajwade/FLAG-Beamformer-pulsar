@@ -144,11 +144,9 @@ chan_8bit = (unsigned char*)malloc(sizeof(unsigned char)*DATA_SIZE);
  
  step_size=0;
  for(k=1; k<nrows;k++){
-    step_size = NUM_SAMPS_PER_BLOCK*TOT_CHANS*k;
     printf("nrow=%d\n",k);
     for (i=0; i<NUM_SAMPS_PER_BLOCK;i++){
-
-      step_size = TOT_CHANS*(i+k);
+      step_size = TOT_CHANS*(i+1) + 50000*(k-1);
       for (o=0;o<5;o++){
 
        for(j=0;j<numFiles;j++){
