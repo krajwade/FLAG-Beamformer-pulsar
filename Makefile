@@ -6,7 +6,7 @@ SRCDIR = src
 BINDIR = bin
 # All the required flags
 
-CFLAGS = -std=gnu99 -Wall
+CFLAGS = -std=gnu99 -Wall -O3  -g
 
 LFLAGS_MATH = -lm
 
