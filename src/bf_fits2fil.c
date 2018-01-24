@@ -61,20 +61,19 @@ void Float2Byte(float *pfbuf, int ilen,float *pcbuf){
 int main(int argc, char *argv[])
 {
 
- int numFiles = 20,e,x,i, j, k,l, m, n,o,status=0,step_size,ind;
+ int numFiles = 20,e,i, j, k,l, m, n,o,status=0,step_size,ind;
  long nrows;
  char filename[128];
  FILE *f1=NULL,*f2=NULL,*f3=NULL,*f4=NULL,*f5=NULL,*f6=NULL,*f7=NULL;
  fitsfile *fptr,*fptr1[20];
  float XX[DATA_SIZE/4],YY[DATA_SIZE/4],XY[DATA_SIZE/4],YX[DATA_SIZE/4], StokesI[DATA_SIZE/4];
  float *beam0, *beam1, *beam2, *beam3, *beam4, *beam5, *beam6;
- unsigned char *chan_8bit;
  glob_t globbuf;
  int colnum=4;
  char timestamp[1024];
  char bank[20];
  char alphabet[1];
- float *chan=NULL, nosig=0.0;
+ float *chan=NULL;
 
 /* Removing Previous files */
 
@@ -144,7 +143,6 @@ int main(int argc, char *argv[])
  beam5 =(float*)malloc(sizeof(float)*TOT_CHANS*nrows*NUM_SAMPS_PER_BLOCK);
  beam6 =(float*)malloc(sizeof(float)*TOT_CHANS*nrows*NUM_SAMPS_PER_BLOCK);
  chan = (float*)malloc(sizeof(float)*DATA_SIZE);
- chan_8bit = (unsigned char*)malloc(sizeof(unsigned char)*DATA_SIZE);
 
 
 /* Converting the spliced files to filterbank file for each beam */
@@ -152,7 +150,7 @@ int main(int argc, char *argv[])
  step_size=0;
  for(k=1; k<nrows;k++)
  {
-    printf("nrow=%d\n",k);
+    //printf("nrow=%d\n",k);
     for (i=0; i<NUM_SAMPS_PER_BLOCK;i++)
     {
        for (o=0;o<5;o++)
@@ -324,7 +322,6 @@ int main(int argc, char *argv[])
   free(beam5);
   free(beam6);
   free(chan);
-  free(chan_8bit);
  
   return(0);
 

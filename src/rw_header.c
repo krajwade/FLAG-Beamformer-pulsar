@@ -205,7 +205,7 @@ int GetMacIDFromName(char *pcObs)
 
 
 // Number of bits per sample
-  iTemp = 8;
+  iTemp = 32;
   ilen = strlen("nbits");
   fwrite(&ilen,sizeof(ilen),1,fptr1);
   strcpy(headstring,"nbits");
@@ -264,14 +264,14 @@ int GetMacIDFromName(char *pcObs)
 */
 
 // Simple frequency write 
-  keyval = 1525;
+  keyval = 1375.0;
   ilen = strlen("fch1");
   fwrite(&ilen,sizeof(ilen),1,fptr1);
   strcpy(headstring,"fch1");
   fwrite(headstring,sizeof(char),ilen,fptr1);
   fwrite(&keyval,sizeof(keyval),1,fptr1);
 
-  keyval = -0.30318;
+  keyval = 0.30318;
   ilen = strlen("foff");
   fwrite(&ilen,sizeof(ilen),1,fptr1);
   strcpy(headstring,"foff");
