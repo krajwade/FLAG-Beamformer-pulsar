@@ -18,5 +18,5 @@ seven beams. The code can be found on GitHub.
 # Things to be done.
 
 1. Change the rw_header subroutine to access the GB ancilliary fits files for relevant header information. Only RA and DEC needs to be updated.
-
+ 2. Band flip and quantization still not tested!! (TBD)
 
