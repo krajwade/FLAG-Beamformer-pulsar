@@ -1,4 +1,4 @@
-This reads vegas fits and converts to sigproc filerbank format.
+This reads real time beam former output vegas fits files and converts them to sigproc filerbank format.
 
 Usage : ./fil_this.py -f "2018_02_01_19:34:30*fits"
 
