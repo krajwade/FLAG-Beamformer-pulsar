@@ -2,7 +2,6 @@
 
 from astropy.io import fits
 import numpy as np
-import pylab as plt
 import sys
 import glob
 import argparse
@@ -79,7 +78,7 @@ for rows in range(5):
         bank_freq_index+=1
 
     print "writing rows : ", rows*nrows, "to" ,(rows+1)*nrows
-
+    # write the 7 beams
     for file_num in range(7):
         file=fb.FilterbankFile(out_file_names[file_num], mode='append')
         file.append_spectra((band_pass[:,:,:,1,file_num]+band_pass[:,:,:,0,file_num]).reshape(100*nrows,500))
