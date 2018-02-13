@@ -6,10 +6,10 @@ import pylab as plt
 import sys
 import glob
 import argparse
+# change presto path here
 sys.path.append("/opt/pulsar/src/PRESTOv2.7.13/lib/python/")
 import filterbank as fb 
 import sigproc
-#import spectra
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-f','--all_files', metavar="path", type=str,\
@@ -59,7 +59,7 @@ header=fb.read_header(fil_file)
 
 # open files to dump header
 for i in range(7): #out_file_names:
-    fb.create_filterbank_file(out_file_names[i],header=header[0],nbits=32,verbose=True)
+    fb.create_filterbank_file(out_file_names[i],header=header[0],nbits=32)
 
 for rows in range(5):
     # to loop through all bank frequecies
@@ -78,18 +78,11 @@ for rows in range(5):
                 hdu.close()
         bank_freq_index+=1
 
-#write
-#    water_fall=(band_pass[:,:,:,1,1]+band_pass[:,:,:,0,1]).reshape(100*1000,500)
-#    plt.imshow(water_fall,cmap="gray",aspect='auto')
-#    plt.show()
     print "writing rows : ", rows*nrows, "to" ,(rows+1)*nrows
 
     for file_num in range(7):
         file=fb.FilterbankFile(out_file_names[file_num], mode='append')
         file.append_spectra((band_pass[:,:,:,1,file_num]+band_pass[:,:,:,0,file_num]).reshape(100*nrows,500))
-
-        #fb.create_filterbank_file(out_file_names[file_num],header[0], mode='append',\
-        #        spectra=(band_pass[:,:,:,1,file_num]+band_pass[:,:,:,0,file_num]).reshape(100*nrows,500).reshape(100*nrows*500))
 
 print "Closing Files"
 for file_num in range(7):
