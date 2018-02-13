@@ -3,7 +3,7 @@ This reads real time beam former output vegas fits files and converts them to si
 Usage : ./fil_this.py -f "2018_02_01_19:34:30*fits"
 
 Upcoming stuff (in the order of current priority):
-1. Right now it doesn't run for the full file. "Make it so!"
+1. (DONE) Right now it doesn't run for the full file. "Make it so!"
 2. Check for dropped banks and don't use them automatically.
 3. Option to band-flip.
 4. Option to ignore chans.
