@@ -1,6 +1,6 @@
 This reads vegas fits and converts to sigproc filerbank format.
 
-Usage : ./fits_this.py -f "2018_02_01_19:34:30*fits"
+Usage : ./fil_this.py -f "2018_02_01_19:34:30*fits"
 
 Upcoming stuff (in the order of current priority):
 1. Right now it doesn't run for the full file. "Make it so!"
