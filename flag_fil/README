@@ -8,5 +8,5 @@ Upcoming stuff (in the order of current priority):
 2. (DONE) Check for dropped banks and don't use them automatically.
 3. Option to band-flip.
 4. Option to ignore chans.
-5. Get the header data automatically.
+5. (DONE)Get the header data automatically.
 6. Quick Bandpass View.
