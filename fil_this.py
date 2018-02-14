@@ -138,7 +138,7 @@ hdrdict["tsamp"]=float(0.000130)
 for i in range(7): #out_file_names:
     fb.create_filterbank_file(out_file_names[i],header=hdrdict)
 #
-for rows in range(len(nrow_list)-2,len(nrow_list)-1):
+for rows in range(len(nrow_list)-1):
     print "Manipulating rows : ", nrow_list[rows], "to" , nrow_list[rows+1]
     if rows==len(nrow_list)-2:
         # when doing the last bit make the zeros array
