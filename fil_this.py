@@ -14,14 +14,74 @@ import sigproc
 # Feb 12, 2018
 # mail: devanshkv@gmail.com
 
+# A function to add a SigProc Header
+
+def getsigprocheader(file):
+
+  telescope_ids = {"Fake": 0, "Arecibo": 1, "Ooty": 2, "Nancay": 3,
+                 "Parkes": 4, "Jodrell": 5, "GBT": 6, "GMRT": 7,
+                 "Effelsberg": 8}
+
+  machine_ids = {"WAPP": 0, "PSPM": 1, "Wapp": 2,"AOFTM": 3,
+               "BCPM1": 4, "FLAGBF": 5, "SCAMP": 6,
+               "GBT Pulsar Spigot": 7, "SPIGOT": 7, "PUPPI": 8 ,
+               "GUPPI": 9,"PA":10,"VEGAS": 11}
+
+
+  hdulist = fits.open(file)
+
+
+  def prep_string(string):
+    return struct.pack('i', len(string))+string
+
+  def prep_double(name, value):
+    return prep_string(name)+struct.pack('d', float(value))
+
+  def prep_int(name, value):
+    return prep_string(name)+struct.pack('i', int(value))
+
+  hdr = prep_string("HEADER_START")
+  hdr += prep_int("telescope_id", 6)
+  hdr += prep_int("machine_id",5)
+  hdr += prep_int("data_type", 1) # 1 = filterbank, 2 = timeseries
+
+  source =hdulist[0].header['OBJECT']
+
+#TODO: parse RA DEC from the ancillary fits files
+
+  hdr += prep_string("source_name")
+  hdr += prep_string(source)
+  hdr += prep_int("barycentric", 1)
+  hdr += prep_int("pulsarcentric", 0)
+  hdr += prep_double("src_raj",12345)
+  hdr += prep_double("src_dej", 12345)
+  hdr += prep_int("nbits", 32)
+  hdr += prep_int("nifs", 1)
+
+  hdr += prep_int("nchans", 500)
+  hdr += prep_double("fch1", 1325.0)
+  hdr += prep_double("foff",-0.30318)
+
+  MJD = hdulist[5].header['UTDSTART']
+
+  hdr += prep_double("tsamp",0.000130)
+
+  return hdr
+
+
+# Main code begins here
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument('-f','--all_files', metavar="path", type=str,\
         help="Path to files to be merged; enclose in quotes, accepts * as wildcard for directories or filenames")
 parser.add_argument('-m', '--mem', type=float, help = "% RAM you want to use [0-1], def = 1", default = 1.0)
+parser.add.argument('-fb' '--flipband', type=int,help = "Flag to flip the band pass while storing to filterbank",default=1)
 
 args = parser.parse_args()
 all_files = glob.glob(args.all_files)
 mem_percent = float(args.mem)
+flag_flip = int(args.flipband)
 
 # if the files don't exist exit
 if not all_files:
@@ -33,7 +93,6 @@ if not all_files:
 row_nos=[]
 for file in all_files:
     junk, header = fits.getdata(file, header=True)
-    # We don't want this data to use up our memory, so set to None
     junk=None
     row_nos.append(int(header["NAXIS2"]))
 
@@ -83,7 +142,6 @@ bank_labels = [chr(i) for i in range(ord('A'),ord('T')+1)]
 # instead of filling zeores later, make a zeros array and fill with useful
 # values later in the for loop
 band_pass = np.zeros(shape=(nrows,100,500,4,7), dtype=np.float32)
-
 # the last few rows will be left out so last_pass will contain them
 #last_pass = np.zeros(shape=(lrows,100,500,4,7), dtype=np.float32)
 last_pass_flag=False
@@ -106,10 +164,9 @@ for _ in range(20):
 # dummy files to write_out_stuff
 out_file_names=["BF_beam_%i.fil" %i for i in range(7)]
 
+# a function that creates a sigproc header from the metadata in the fits files
+header = getsigprocheader(files[0])
 
-# get dummy_header and it should be a dict as per presto
-fil_file='/lustre/projects/flag/survey_filterbank/S02/B1933+16_1/BF_pulsar_0.fil'
-header=fb.read_header(fil_file)
 
 # open files to dump header
 for i in range(7): #out_file_names:
@@ -148,10 +205,21 @@ for rows in range(len(nrow_list)-1):
     for file_num in range(7):
         file=fb.FilterbankFile(out_file_names[file_num], mode='append')
         if last_pass_flag:
+          if(flag_flip==1):
+            last_pass_f = (last_pass[:,:,:,1,file_num]+last_pass[:,:,:,0,file_num]).reshape(100*lrows,500)
+            last_pass_flip = np.flip(last_pass_f,axis=1)
+            file.append_spectra(last_pass_flip)
+          else:
             file.append_spectra((last_pass[:,:,:,1,file_num]+last_pass[:,:,:,0,file_num]).reshape(100*lrows,500))
         else:
+          if (flag_flip==1):
+            band_pass_f = (band_pass[:,:,:,1,file_num]+band_pass[:,:,:,0,file_num]).reshape(100*nrows,500)
+            band_pass_flip = np.flip(band_pass_f,axis-1)
             file.append_spectra((band_pass[:,:,:,1,file_num]+band_pass[:,:,:,0,file_num]).reshape(100*nrows,500))
-
+        
+          else:
+            file.append_spectra((band_pass[:,:,:,1,file_num]+band_pass[:,:,:,0,file_num]).reshape(100*nrows,500))
+            
 
 print "Closing Files"
 for file_num in range(7):
