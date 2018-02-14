@@ -33,6 +33,7 @@ if not all_files:
 row_nos=[]
 for file in all_files:
     junk, header = fits.getdata(file, header=True)
+    # We don't want this data to use up our memory, so set to None
     junk=None
     row_nos.append(int(header["NAXIS2"]))
 
@@ -82,6 +83,7 @@ bank_labels = [chr(i) for i in range(ord('A'),ord('T')+1)]
 # instead of filling zeores later, make a zeros array and fill with useful
 # values later in the for loop
 band_pass = np.zeros(shape=(nrows,100,500,4,7), dtype=np.float32)
+
 # the last few rows will be left out so last_pass will contain them
 #last_pass = np.zeros(shape=(lrows,100,500,4,7), dtype=np.float32)
 last_pass_flag=False
@@ -105,7 +107,7 @@ for _ in range(20):
 out_file_names=["BF_beam_%i.fil" %i for i in range(7)]
 
 
-# get dummy_header
+# get dummy_header and it should be a dict as per presto
 fil_file='/lustre/projects/flag/survey_filterbank/S02/B1933+16_1/BF_pulsar_0.fil'
 header=fb.read_header(fil_file)
 
