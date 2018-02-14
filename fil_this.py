@@ -17,25 +17,44 @@ import sigproc
 parser = argparse.ArgumentParser()
 parser.add_argument('-f','--all_files', metavar="path", type=str,\
         help="Path to files to be merged; enclose in quotes, accepts * as wildcard for directories or filenames")
-parser.add_argument('-m', '--mem', type=float, help = "% RAM you want to use [0-1], def = 0.1", default = 0.1)
+parser.add_argument('-m', '--mem', type=float, help = "% RAM you want to use [0-1], def = 1", default = 1.0)
 
 args = parser.parse_args()
-files = glob.glob(args.all_files)
+all_files = glob.glob(args.all_files)
 mem_percent = float(args.mem)
 
-if not files:
+# if the files don't exist exit
+if not all_files:
     print('File(s) does not exist: ' + args.all_files) #, file=sys.stderr)
-for file in files:
-    print('Running using files: ' + file)
+    sys.exit()
+
+# check for dropped banks
+
+row_nos=[]
+for file in all_files:
+    junk, header = fits.getdata(file, header=True)
+    junk=None
+    row_nos.append(int(header["NAXIS2"]))
+
+# get the mode
+tot_rows = max(row_nos, key=row_nos.count)
+
+# take files with same number of rows
+files=[]
+for idx, file in enumerate(all_files):
+    if row_nos[idx]==tot_rows:
+        print('Running using files: ' + file)
+        files.append(file)
 
 
 # Get RAM info
 meminfo = dict((i.split()[0].rstrip(':'),int(i.split()[1])) for i in open('/proc/meminfo').readlines())
 mem_mib = meminfo['MemTotal']/1024
 
+
 # Get nrows corresponding to a given fraction of RAM
-# NOTE: Even if you give -m 1, I will scale it down to 75%
-# Hence the 0.75 factor
+# NOTE: Even if you give -m 1, I will scale it down to 50%
+# Hence the 0.5 factor
 # 100*25*7*4*20*4e-6
 # 100 samples per row
 # 25 chanels per bank
@@ -44,19 +63,17 @@ mem_mib = meminfo['MemTotal']/1024
 # 20 bank files
 # 4e-6 sizeof(32 bit float)
 if 0 < mem_percent <= 1:
-     nrows=int(0.75*mem_mib*mem_percent/(100*25*7*4*20*4e-6))
+     nrows=int(0.5*mem_mib*mem_percent/(100*25*7*4*20*4e-6))
 else:
     raise ValueError("percent RAM usage cannot be > 1")
 
 # Get num_runs
 
-#hdu=fits.open(file)
-data, header = fits.getdata(file, header=True)
-tot_rows=int(header["NAXIS2"])
 print "total rows : ", tot_rows
-
+print "row step   : ", nrows
 nrow_list=list(range(0,tot_rows, nrows))
 nrow_list.append(tot_rows)
+lrows=nrow_list[-1]-nrow_list[-2]
 
 
 # This generates all the 20 bank label from A to T.
@@ -66,7 +83,7 @@ bank_labels = [chr(i) for i in range(ord('A'),ord('T')+1)]
 # values later in the for loop
 band_pass = np.zeros(shape=(nrows,100,500,4,7), dtype=np.float32)
 # the last few rows will be left out so last_pass will contain them
-last_pass = np.zeros(shape=(nrow_list[-1]-nrow_list[-2],100,500,4,7), dtype=np.float32)
+#last_pass = np.zeros(shape=(lrows,100,500,4,7), dtype=np.float32)
 last_pass_flag=False
 
 # the following chunk makes up the vector to fix the frequency structure.
@@ -97,6 +114,11 @@ for i in range(7): #out_file_names:
     fb.create_filterbank_file(out_file_names[i],header=header[0],nbits=32)
 
 for rows in range(len(nrow_list)-1):
+    print "Manipulating rows : ", nrow_list[rows], "to" , nrow_list[rows+1]
+    if rows==len(nrow_list)-2:
+        last_pass = np.zeros(shape=(lrows,100,500,4,7), dtype=np.float32)
+        last_pass_flag=True
+        band_pass = None
     # to loop through all bank frequecies
     bank_freq_index=0
     # loops through all banks
@@ -110,21 +132,23 @@ for rows in range(len(nrow_list)-1):
                 data=hdu[1].data['DATA']
                 # the data is this is 100 (time samples) X 25 (chans) X 4 (pol)  X 7 (beams)
                 # if running for last few rows use last_pass, and raise the flag!
-                try:
+                if not last_pass_flag:
                     band_pass[:,:,freq_lists[bank_freq_index],:,:]=data[nrow_list[rows]:nrow_list[rows+1],:].reshape(nrows,100,25,4,7)
-                except ValueError:
-                    last_pass[:,:,freq_lists[bank_freq_index],:,:]=data[nrow_list[rows]:nrow_list[rows+1],:].reshape(nrows,100,25,4,7)
-                    last_pass_flag=True
+                else:
+                    last_pass[:,:,freq_lists[bank_freq_index],:,:]=data[nrow_list[rows]:nrow_list[rows+1],:].reshape(lrows,100,25,4,7)
                 hdu.close()
         bank_freq_index+=1
 
     print "writing rows : ", nrow_list[rows], "to" , nrow_list[rows+1]
     # write the 7 beams
-    if last_pass_flag:
-        band_pass = last_pass
+   # if last_pass_flag:
+   #     band_pass = last_pass
     for file_num in range(7):
         file=fb.FilterbankFile(out_file_names[file_num], mode='append')
-        file.append_spectra((band_pass[:,:,:,1,file_num]+band_pass[:,:,:,0,file_num]).reshape(100*nrows,500))
+        if last_pass_flag:
+            file.append_spectra((last_pass[:,:,:,1,file_num]+last_pass[:,:,:,0,file_num]).reshape(100*lrows,500))
+        else:
+            file.append_spectra((band_pass[:,:,:,1,file_num]+band_pass[:,:,:,0,file_num]).reshape(100*nrows,500))
 
 
 print "Closing Files"
