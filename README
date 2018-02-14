@@ -6,7 +6,7 @@ Usage : ./fil_this.py -f "2018_02_01_19:34:30*fits"
 Upcoming stuff (in the order of current priority):
 1. (DONE) Right now it doesn't run for the full file. "Make it so!"
 2. (DONE) Check for dropped banks and don't use them automatically.
-3. Option to band-flip.
+3. (Done) Option to band-flip.
 4. Option to ignore chans.
 5. (DONE)Get the header data automatically.
 6. Quick Bandpass View.
