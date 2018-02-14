@@ -44,7 +44,9 @@ for file in all_files:
     junk, header = fits.getdata(file, header=True)
     junk=None
     row_nos.append(int(header["NAXIS2"]))
-    MJD = float(header['STRTDMJD'])
+
+header=fits.getheader(file)
+MJD = float(header['STRTDMJD'])
 
 # get the mode
 tot_rows = max(row_nos, key=row_nos.count)
