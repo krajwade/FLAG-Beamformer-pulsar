@@ -1,4 +1,5 @@
 This reads real time beam former output vegas fits files and converts them to sigproc filerbank format.
+It looks the system memory and proceeds accordingly. Use -m to change it.
 
 Usage : ./fil_this.py -f "2018_02_01_19:34:30*fits"
 
