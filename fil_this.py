@@ -28,7 +28,8 @@ parser.add_argument('--noflip', nargs='?', const=False, default=True,\
         help='Flag to flip the band pass while storing to filterbank (def=True)',\
         required=False)
 parser.add_argument('--ignorechan', type=str, required=False, help = "number/range\
-        of channels to ignore like '0-5' or '2' or add multiple ranges like '0-2,4-6'")
+        of channels to ignore like '0-5' or '2' or add multiple ranges like '0-2,4-6'",\
+        default=None)
 
 args = parser.parse_args()
 all_files = glob.glob(args.all_files)
@@ -80,8 +81,8 @@ def get_loc(proj_name, f_name):
     CFREQ= hdu[3].data['LO1FREQ'][0]/1e6
     hdu.close()
     c = SkyCoord(ra=RAJ, dec=DEC, frame='icrs', unit='deg')
-    RAJ= c.dec.dms[0]*10000 + c.dec.dms[1]*100 + c.dec.dms[2]
-    DEC= c.ra.hms[0]*10000 + c.ra.hms[1]*100 + c.ra.dms[2]
+    DEC= c.dec.dms[0]*10000 + c.dec.dms[1]*100 + c.dec.dms[2]
+    RAJ= c.ra.hms[0]*10000 + c.ra.hms[1]*100 + c.ra.dms[2]
     return RAJ, DEC, CFREQ 
 
 header=fits.getheader(file)
@@ -162,7 +163,7 @@ out_file_names=["BF_beam_%i.fil" %i for i in range(7)]
 # make header here
 hdrdict={}
 hdrdict["telescope_id"]=int(6)
-hdrdict["machine_id"]=int(5)
+hdrdict["machine_id"]=int(0)
 hdrdict["data_type"]=int(1)
 hdrdict["source_name"]=str("source")
 hdrdict["barycentric"]=int(1)
@@ -181,12 +182,11 @@ else:
 hdrdict["tstart"]=float(MJD)
 hdrdict["tsamp"]=float(0.000130)
 
-
 ## open files to dump header
 for i in range(7): #out_file_names:
-    fb.create_filterbank_file(out_file_names[i],header=hdrdict)
+    fb.create_filterbank_file(out_file_names[i],header=hdrdict, nbits=32)
 #
-for rows in range(len(nrow_list)-3,len(nrow_list)-1):
+for rows in range(len(nrow_list)-1):
     print "Manipulating rows : ", nrow_list[rows], "to" , nrow_list[rows+1]
     if rows==len(nrow_list)-2:
         # when doing the last bit make the zeros array
@@ -218,7 +218,7 @@ for rows in range(len(nrow_list)-3,len(nrow_list)-1):
     # write the 7 beams
     # band flip if needed
     # ignore chan in needed
-    if ignorechan:
+    if ignorechannels:
         if last_pass_flag:
             for ii in ignorechan:
                 last_pass[:,:,ii,:,:]=0
