@@ -5,32 +5,56 @@ import numpy as np
 import sys
 import glob
 import argparse
-import struct
 import fml
+import re
+from itertools import chain
 # change presto path here
 sys.path.append("/opt/pulsar/src/PRESTOv2.7.13/lib/python/")
 import filterbank as fb 
-import sigproc
+from astropy import units as u
+from astropy.coordinates import SkyCoord
 
 # written by Devansh Agarwal
 # Feb 12, 2018
 # mail: devanshkv@gmail.com
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-f','--all_files', metavar="path", type=str,\
         help="Path to files to be merged; enclose in quotes, accepts\
         * as wildcard for directories or filenames", required=True)
 parser.add_argument('-m', '--mem', type=float, help = "% RAM you \
-        want to use [0-1] (def=1)", default = 1.0, required=False)
+        want to use [0-1] (def=0.6)", default = 0.6, required=False)
 parser.add_argument('--noflip', nargs='?', const=False, default=True,\
         help='Flag to flip the band pass while storing to filterbank (def=True)',\
         required=False)
+parser.add_argument('--ignorechan', type=str, required=False, help = "number/range\
+        of channels to ignore like '0-5' or '2' or add multiple ranges like '0-2,4-6'",\
+        default=None)
 
 args = parser.parse_args()
 all_files = glob.glob(args.all_files)
 mem_percent = float(args.mem)
 flip = args.noflip
+ignorechannels=args.ignorechan
+
+
+# do stuff for ignorechan
+if ignorechannels:
+    get_all_ranges=ignorechannels.split(',')
+    def parseNumList(string):
+        m = re.match(r'(\d+)(?:-(\d+))?$', string)
+        start = m.group(1)
+        end = m.group(2) or start
+        return list(range(int(start,10), int(end,10)+1))
+    ic=[]
+    for ranges in get_all_ranges:
+        ic.append(parseNumList(ranges))
+    ignorechan=list(chain.from_iterable(ic))
+    if 500 in ignorechan:
+        raise ValueError("number of channels range from 0-499")
+        sys.exit()
+    print "ignoring channels : ", ignorechan
+
 print "flip : ", flip
 # if the files don't exist exit
 if not all_files:
@@ -45,8 +69,27 @@ for file in all_files:
     junk=None
     row_nos.append(int(header["NAXIS2"]))
 
+# Get header stuff here
+def get_loc(proj_name, f_name):
+    dir="/home/gbtdata/"+str(proj_name)+"/Antenna/"+str(f_name)+".fits"
+    hdu=fits.open(dir)
+    DEC=np.mean(hdu[2].data['DECJ2000'])
+    RAJ=np.mean(hdu[2].data['RAJ2000'])
+    hdu.close()
+    dir="/home/gbtdata/"+str(proj_name)+"/LO1B/"+str(f_name)+".fits"
+    hdu=fits.open(dir)
+    CFREQ= hdu[3].data['LO1FREQ'][0]/1e6
+    hdu.close()
+    c = SkyCoord(ra=RAJ, dec=DEC, frame='icrs', unit='deg')
+    DEC= c.dec.dms[0]*10000 + c.dec.dms[1]*100 + c.dec.dms[2]
+    RAJ= c.ra.hms[0]*10000 + c.ra.hms[1]*100 + c.ra.dms[2]
+    return RAJ, DEC, CFREQ 
+
 header=fits.getheader(file)
 MJD = float(header['STRTDMJD'])
+proj_name=header['BCALFILE']
+f_name = header['TSTAMP']
+RAJ, DEC, CFREQ = get_loc(proj_name, f_name)
 
 # get the mode
 tot_rows = max(row_nos, key=row_nos.count)
@@ -76,7 +119,7 @@ mem_mib = fml.FreeMemLinux(unit='MB').user_free # meminfo['MemTotal']/1024
 # 20 bank files
 # 4e-6 sizeof(32 bit float)
 if 0 < mem_percent <= 1:
-     nrows=int(0.75*mem_mib*mem_percent/(100*25*7*4*20*4e-6))
+     nrows=int(mem_mib*mem_percent/(100*25*7*4*20*4e-6))
 else:
     raise ValueError("percent RAM usage cannot be > 1")
 
@@ -120,25 +163,28 @@ out_file_names=["BF_beam_%i.fil" %i for i in range(7)]
 # make header here
 hdrdict={}
 hdrdict["telescope_id"]=int(6)
-hdrdict["machine_id"]=int(5)
+hdrdict["machine_id"]=int(0)
 hdrdict["data_type"]=int(1)
 hdrdict["source_name"]=str("source")
 hdrdict["barycentric"]=int(1)
 hdrdict["pulsarcentric"]=int(0)
-hdrdict["src_raj"]=float(12345)
-hdrdict["src_dej"]=float(12345)
+hdrdict["src_raj"]=float(RAJ)
+hdrdict["src_dej"]=float(DEC)
 hdrdict["nbits"]=int(32)
 hdrdict["nifs"]=int(1)
 hdrdict["nchans"]=int(500)
-hdrdict["fch1"]=float(1535.0)
-hdrdict["foff"]=float(-0.30318)
+if flip:
+    hdrdict["fch1"]=float(CFREQ+75.0)
+    hdrdict["foff"]=float(-0.30318)
+else:
+    hdrdict["fch1"]=float(CFREQ-75.0)
+    hdrdict["foff"]=float(0.30318)
 hdrdict["tstart"]=float(MJD)
 hdrdict["tsamp"]=float(0.000130)
 
-
 ## open files to dump header
 for i in range(7): #out_file_names:
-    fb.create_filterbank_file(out_file_names[i],header=hdrdict)
+    fb.create_filterbank_file(out_file_names[i],header=hdrdict, nbits=32)
 #
 for rows in range(len(nrow_list)-1):
     print "Manipulating rows : ", nrow_list[rows], "to" , nrow_list[rows+1]
@@ -171,6 +217,15 @@ for rows in range(len(nrow_list)-1):
     print "writing rows : ", nrow_list[rows], "to" , nrow_list[rows+1]
     # write the 7 beams
     # band flip if needed
+    # ignore chan in needed
+    if ignorechannels:
+        if last_pass_flag:
+            for ii in ignorechan:
+                last_pass[:,:,ii,:,:]=0
+        else:
+            for ii in ignorechan:
+                band_pass[:,:,ii,:,:]=0
+
     for file_num in range(7):
         file=fb.FilterbankFile(out_file_names[file_num], mode='append')
         if last_pass_flag:
