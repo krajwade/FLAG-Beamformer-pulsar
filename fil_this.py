@@ -174,10 +174,10 @@ hdrdict["nbits"]=int(32)
 hdrdict["nifs"]=int(1)
 hdrdict["nchans"]=int(500)
 if flip:
-    hdrdict["fch1"]=float(CFREQ+75.0)
+    hdrdict["fch1"]=float(CFREQ+65.0)
     hdrdict["foff"]=float(-0.30318)
 else:
-    hdrdict["fch1"]=float(CFREQ-75.0)
+    hdrdict["fch1"]=float(CFREQ-85.0)
     hdrdict["foff"]=float(0.30318)
 hdrdict["tstart"]=float(MJD)
 hdrdict["tsamp"]=float(0.000130)
@@ -220,11 +220,9 @@ for rows in range(len(nrow_list)-1):
     # ignore chan in needed
     if ignorechannels:
         if last_pass_flag:
-            for ii in ignorechan:
-                last_pass[:,:,ii,:,:]=0
+                last_pass[:,:,ignorechan,:,:]=0
         else:
-            for ii in ignorechan:
-                band_pass[:,:,ii,:,:]=0
+                band_pass[:,:,ignorechan,:,:]=0
 
     for file_num in range(7):
         file=fb.FilterbankFile(out_file_names[file_num], mode='append')
