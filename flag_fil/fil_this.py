@@ -49,7 +49,7 @@ def quant_8bit(array):
       min = np.amin(array[i,:])
       max = np.amax(array[i,:])
       frange = float(max-min)
-      quant_array = np.array(np.around(((array[i,:] - min)/range)*fmax),dtype='uint8')
+      quant_array = np.array(np.around(((array[i,:] - min)/frange)*fmax),dtype='uint8')
       quant_list.append(quant_array)
 
   quant_fin = np.array(quant_list)
