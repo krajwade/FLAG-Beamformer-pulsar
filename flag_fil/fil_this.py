@@ -8,6 +8,7 @@ import argparse
 import fml
 import re
 from itertools import chain
+from numba import jit
 # change presto path here
 sys.path.append("/opt/pulsar/src/PRESTOv2.7.13/lib/python/")
 import filterbank as fb 
@@ -37,6 +38,22 @@ mem_percent = float(args.mem)
 flip = args.noflip
 ignorechannels=args.ignorechan
 
+
+# Define quantization function
+@jit(parallel=True)                 # Using numba to compile this function
+def quant_8bit(array):
+  
+  quant_list=[]
+  fmax = float(pow(2,8)-1)
+  for i in range(len(array[:,0])):
+      min = np.amin(array[i,:])
+      max = np.amax(array[i,:])
+      frange = float(max-min)
+      quant_array = np.array(np.around(((array[i,:] - min)/range)*fmax),dtype='uint8')
+      quant_list.append(quant_array)
+
+  quant_fin = np.array(quant_list)
+  return quant_fin
 
 # do stuff for ignorechan
 if ignorechannels:
@@ -218,6 +235,7 @@ for rows in range(len(nrow_list)-1):
     # write the 7 beams
     # band flip if needed
     # ignore chan in needed
+    # Quantize to 8-bit
     if ignorechannels:
         if last_pass_flag:
                 last_pass[:,:,ignorechan,:,:]=0
@@ -228,14 +246,14 @@ for rows in range(len(nrow_list)-1):
         file=fb.FilterbankFile(out_file_names[file_num], mode='append')
         if last_pass_flag:
             if flip:
-                file.append_spectra((last_pass[:,:,:,1,file_num]+last_pass[:,:,:,0,file_num]).reshape(100*lrows,500)[:,::-1])
+                file.append_spectra(qunat_8bit((last_pass[:,:,:,1,file_num]+last_pass[:,:,:,0,file_num]).reshape(100*lrows,500)[:,::-1]))
             else:
-                file.append_spectra((last_pass[:,:,:,1,file_num]+last_pass[:,:,:,0,file_num]).reshape(100*lrows,500))
+                file.append_spectra(quant_8bit((last_pass[:,:,:,1,file_num]+last_pass[:,:,:,0,file_num]).reshape(100*lrows,500)))
         else:
             if flip:
-                file.append_spectra((band_pass[:,:,:,1,file_num]+band_pass[:,:,:,0,file_num]).reshape(100*nrows,500)[:,::-1])
+                file.append_spectra(quant_8bit((band_pass[:,:,:,1,file_num]+band_pass[:,:,:,0,file_num]).reshape(100*nrows,500)[:,::-1]))
             else:
-                file.append_spectra((band_pass[:,:,:,1,file_num]+band_pass[:,:,:,0,file_num]).reshape(100*nrows,500))
+                file.append_spectra(quant_8bit((band_pass[:,:,:,1,file_num]+band_pass[:,:,:,0,file_num]).reshape(100*nrows,500)))
             
 
 print "Closing Files"
