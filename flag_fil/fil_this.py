@@ -40,20 +40,15 @@ ignorechannels=args.ignorechan
 
 
 # Define quantization function
-@jit(parallel=True)                 # Using numba to compile this function
+@jit                # Using numba to compile this function
 def quant_8bit(array):
   
-  quant_list=[]
   fmax = float(pow(2,8)-1)
-  for i in range(len(array[:,0])):
-      min = np.amin(array[i,:])
-      max = np.amax(array[i,:])
-      frange = float(max-min)
-      quant_array = np.array(np.around(((array[i,:] - min)/frange)*fmax),dtype='uint8')
-      quant_list.append(quant_array)
-
-  quant_fin = np.array(quant_list)
-  return quant_fin
+  min = np.amin(array,axis=1)
+  max = np.amax(array,axis=1)
+  frange = np.subtract(max,min,dtype='float')
+  quant_array = np.array(np.around(((array - min[:,None])/frange[:, None])*fmax),dtype='uint8')
+  return quant_array
 
 # do stuff for ignorechan
 if ignorechannels:
