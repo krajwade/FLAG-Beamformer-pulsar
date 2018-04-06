@@ -1,0 +1,1 @@
+gcc -o plot_beamspec -L <path to cfitsio lib> -lcfitsio -I <path to pgplot lib> -lpgplot -lcpgplot -lX11 -lpng -lm plot_beamspec.c -Wall
