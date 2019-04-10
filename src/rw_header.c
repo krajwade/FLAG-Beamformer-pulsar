@@ -27,8 +27,144 @@ char *del(char str[], char str1[128]) {
 
    }
 
+double radeg2hms(double ra)
+{
+    float ra_m, ra_s;
+    char rastr[1024], ra_hstr[128], ra_mstr[128], ra_sstr[128];
+    sprintf(ra_hstr, "%lf",floor(ra/15.0));
+    ra_m = (ra/15 - floor(ra/15.0))*60.0;
+    sprintf(ra_mstr, "%lf",ra_m - floor(ra_m));
+    ra_s = (ra_m - floor(ra_m))*60.0;
+    sprintf(ra_sstr, "%lf",ra_s);
+    strcat(rastr,ra_hstr);
+    strcat(rastr,ra_mstr);
+    strcat(rastr,ra_sstr);
+    return atof(rastr);
+}
 
-int rw_header(fitsfile *fptr,FILE *fptr1)
+double decdeg2dms(double dec)
+{
+    float dec_m, dec_s;
+    char decstr[1024], dec_dstr[128], dec_mstr[128], dec_sstr[128];
+    if (dec < 0.0)
+    {
+      float val = abs(dec); 
+      sprintf(dec_dstr, "%f",floor(val));
+      dec_m = (val - floor(val))*60.0;
+      sprintf(dec_mstr, "%lf",dec_m - floor(dec_m));
+      dec_s = (dec_m - floor(dec_m))*60.0;
+      sprintf(dec_sstr, "%lf",dec_s);
+      strcat(decstr,dec_dstr);
+      strcat(decstr,dec_mstr);
+      strcat(decstr,dec_sstr);
+      return -1.0*atof(decstr);
+    }
+
+    else
+    {
+      sprintf(dec_dstr, "%lf",floor(dec));
+      dec_m = (dec - floor(dec))*60.0;
+      sprintf(dec_mstr, "%lf",dec_m - floor(dec_m));
+      dec_s = (dec_m - floor(dec_m))*60.0;
+      sprintf(dec_sstr, "%lf",dec_s);
+      strcat(decstr,dec_dstr);
+      strcat(decstr,dec_mstr);
+      strcat(decstr,dec_sstr);
+      return atof(decstr);
+    }
+}
+
+double getRA(fitsfile *fp)
+{
+
+    int status=0;
+    //FILE* fptr=NULL;
+    //char command[1024];
+    static double ra;
+    double ra_fin;
+    fits_read_key(fp,TDOUBLE, "RA", &ra, NULL, &status);
+    if (status)
+    {          /* print any error messages */
+	    fits_report_error(stderr, status);
+	    return(status);
+    }
+
+    /*fits_read_key(fp,TDOUBLE, "DEC", &dec, NULL, &status);
+    if (status)
+    {           print any error messages */
+    /*	    fits_report_error(stderr, status);
+	    return(status);
+    }*/
+
+    /*sprintf(command,"python /users/krajwade/bf/FLAG-Beamformer-pulsar/src/ra_conv.py %lf %lf",ra, dec);
+    fptr = popen(command,"r");
+
+    if (fptr == NULL){
+      printf("Error!!\n") ;
+      exit(1);
+    }
+    fread(ra_fin, sizeof(double),1,fptr);*/
+    ra_fin = radeg2hms(ra);
+    return ra_fin;
+}
+
+
+double getDec(fitsfile* fp)
+{
+
+    int status=0;
+   // FILE* fptr=NULL;
+ // char command[1024];
+    static double dec;
+    double dec_fin;
+    fits_read_key(fp,TDOUBLE, "DEC", &dec, NULL, &status);
+
+    if (status)
+    {         /*  print any error messages */
+    	    fits_report_error(stderr, status);
+	    return(status);
+    }
+
+    /*fits_read_key(fp,TDOUBLE, "RA", &ra, NULL, &status);
+
+    if (status)
+    {           print any error messages */
+    /*        fits_report_error(stderr, status);
+	    return(status);
+    }*/
+
+
+    /*sprintf(command,"python /users/krajwade/bf/FLAG-Beamformer-pulsar/src/dec_conv.py %lf %lf",ra, dec);
+    fptr = popen(command,"r");
+
+    if (fptr == NULL){
+      printf("Error!!\n") ;
+      exit(1);
+    }
+    fread(dec_fin, sizeof(double),1,fptr);*/
+    dec_fin = decdeg2dms(dec);
+    return dec_fin;
+
+}
+
+double getFreq(fitsfile* fp)
+{
+
+    int status=0;
+
+    static double freq;
+    fits_read_key(fp,TDOUBLE, "RESTFRQ", &freq, NULL, &status);
+
+    if (status)
+    {          /* print any error messages */
+	    fits_report_error(stderr, status);
+	    return(status);
+    }
+
+    return freq/1000000.0;
+
+}
+int rw_header(fitsfile *fptr,FILE *fptr1, char* proj_id, char* timestamp, int qflag, int fflag)
 {
  
 
@@ -156,9 +292,7 @@ int GetMacIDFromName(char *pcObs)
 //
 
 //Source
-/* Opening the GO Fits file */
 
-/* fits_open_file(&fptr2, go_file, READONLY, &status);*/
   fits_read_card(fptr, "OBJECT", record, &status); /* read keyval */
   fits_read_key(fptr,TSTRING, "OBJECT", &strval, NULL, &status);
   ilen = strlen("source_name");
@@ -175,9 +309,30 @@ int GetMacIDFromName(char *pcObs)
    }
 
 
+// Opening the Corresponding GO fits file
+  fitsfile *gofile;
+  char path[1024];
+  char timestampcpy[1024];
+  strcpy(timestampcpy, timestamp);
+  strcpy(path,"/home/gbtdata/");
+  strcat(path,proj_id);
+  strcat(path, "/GO/");
+  strcat(timestampcpy,".fits");
+  strcat(path,timestampcpy);
+
+// DoI need to add the null char here?
+
+  fits_open_file(&gofile, path, READONLY, &status);
+
+  if (status) 
+  {         /* print any error messages */
+     fits_report_error(stderr, status);
+     exit(1);
+  }
+
 
 //RA
-  keyval = 12345.0;                         // Still not sure where to get the information for RA
+  keyval = getRA(gofile);                         // Still not sure where to get the information for RA
   ilen = strlen("src_raj");
   fwrite(&ilen,sizeof(ilen),1,fptr1);
   strcpy(headstring,"src_raj");
@@ -185,9 +340,8 @@ int GetMacIDFromName(char *pcObs)
   fwrite(&keyval,sizeof(keyval),1,fptr1);
 // writing to file
 
-
 //DEC
-  keyval = 12345.0;                        // Same for DEC
+  keyval = getDec(gofile);                        // Same for DEC
   ilen = strlen("src_dej");
   fwrite(&ilen,sizeof(ilen),1,fptr1);
   strcpy(headstring,"src_dej");
@@ -205,7 +359,10 @@ int GetMacIDFromName(char *pcObs)
 
 
 // Number of bits per sample
-  iTemp = 32;
+  if (qflag == 1)
+      iTemp = 8;
+  else
+      iTemp = 32;
   ilen = strlen("nbits");
   fwrite(&ilen,sizeof(ilen),1,fptr1);
   strcpy(headstring,"nbits");
@@ -264,14 +421,20 @@ int GetMacIDFromName(char *pcObs)
 */
 
 // Simple frequency write 
-  keyval = 1375.0;
+  if (fflag == 1)
+  	keyval = getFreq(gofile) + (250*0.30318) ; // Getting to the highest frequency channel
+  else
+	keyval = getFreq(gofile) - (250*0.30318);
   ilen = strlen("fch1");
   fwrite(&ilen,sizeof(ilen),1,fptr1);
   strcpy(headstring,"fch1");
   fwrite(headstring,sizeof(char),ilen,fptr1);
   fwrite(&keyval,sizeof(keyval),1,fptr1);
 
-  keyval = 0.30318;
+  if (fflag == 1)
+  	keyval = -0.30318;
+  else
+	keyval = 0.30318;
   ilen = strlen("foff");
   fwrite(&ilen,sizeof(ilen),1,fptr1);
   strcpy(headstring,"foff");

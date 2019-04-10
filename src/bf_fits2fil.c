@@ -4,6 +4,7 @@
 #include<string.h>
 #include"/usr/include/cfitsio/fitsio.h"
 #include<glob.h>
+#include<time.h>
 #include<float.h>
 #include"rw_header.h"
 #include<omp.h>
@@ -134,7 +135,7 @@ int main(int argc, char *argv[])
     status=0;
  }
 
- nrows=100;
+ nrows=500;
  beam0 =(float*)malloc(sizeof(float)*TOT_CHANS*nrows*NUM_SAMPS_PER_BLOCK);
  beam1 =(float*)malloc(sizeof(float)*TOT_CHANS*nrows*NUM_SAMPS_PER_BLOCK);
  beam2 =(float*)malloc(sizeof(float)*TOT_CHANS*nrows*NUM_SAMPS_PER_BLOCK);
@@ -148,6 +149,7 @@ int main(int argc, char *argv[])
 /* Converting the spliced files to filterbank file for each beam */
  
  step_size=0;
+ clock_t begin = clock();
  for(k=1; k<nrows;k++)
  {
     //printf("nrow=%d\n",k);
@@ -218,6 +220,7 @@ int main(int argc, char *argv[])
 
  }
  
+ clock_t end = clock();
 /* converting the filterbank to contiguous frequency channels */
 
  
@@ -268,6 +271,9 @@ int main(int argc, char *argv[])
      exit(1);
   }
 
+  double time_spent = (double)(end - begin)/ CLOCKS_PER_SEC;
+ 
+  printf("Total time taken:%lf seconds\n",time_spent);
 
 /* Writing the header */
 

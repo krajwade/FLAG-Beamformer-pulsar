@@ -58,7 +58,7 @@ int main(int argc, char *argv[]){
           break;
 
           case 'f':
-          sprintf(timestamp,"%s",optarg);;
+          sprintf(timestamp,"%s",optarg);
           break;
 
           case 'l':
