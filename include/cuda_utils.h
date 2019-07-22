@@ -11,9 +11,9 @@ extern "C" {
 #include<math.h>
 #include<string.h>
 
-void run_quant(float* h_pfbuf, int n, unsigned char* h_pcbuf, int sample);
+void run_quant(float* h_pfbuf, int n, unsigned char* h_pcbuf);
 
-void channel_flip_float(float* h_A, int size, int sample, int nchans);
+void channel_flip_float(float* h_A, int size, int nchans);
 
 void checkCUDAError(const char* msg);
 

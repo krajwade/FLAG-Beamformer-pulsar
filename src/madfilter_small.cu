@@ -208,7 +208,7 @@ d_rms_a[tid] = sqrtf( sumsq/(binsize) - mean*mean );
 }
 
  
-void run_madfilter(unsigned char* h_cdata, int size, int bsize, int sample){
+void run_madfilter(unsigned char* h_cdata, int size, int bsize){
 
 int i,ind=0, mult_thresh, bins;
 int *h_data, *d_data, *not_flagged_data, op_int = 1;
@@ -238,7 +238,7 @@ h_flag = (bool *)malloc(size*sizeof(bool));	// Flags
 
 
 // Reading data as 4 byte integers
-for(i = sample*size; i < (sample + 1)*size; i++) {
+for(i = 0; i < size; i++) {
           h_data[ind] = (int) h_cdata[i];
 	  ++ind;
         }
@@ -311,7 +311,7 @@ cudaEventDestroy(stop);
 //printf("Total time = %f ms", time_copyback + time_kernel) ;
 
 ind =0;
-for (i=sample*size;i<(sample + 1)*size;i++){
+for (i=0;i<size;i++){
   h_cdata[i] = (h_data[ind] & (255));
   ++ind;
 }

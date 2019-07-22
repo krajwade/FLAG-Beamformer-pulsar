@@ -10,7 +10,7 @@ extern "C" {
 #include<math.h>
 #include<string.h>
 
-void run_madfilter(unsigned char* h_cdata, int size, int bsize, int sample);
+void run_madfilter(unsigned char* h_cdata, int size, int bsize);
 
 #ifdef __cplusplus
 }

@@ -31,12 +31,12 @@ double radeg2hms(double ra)
 {
     float ra_m, ra_s;
     char rastr[1024], ra_hstr[128], ra_mstr[128], ra_sstr[128];
-    sprintf(ra_hstr, "%lf",floor(ra/15.0));
-    ra_m = (ra/15 - floor(ra/15.0))*60.0;
-    sprintf(ra_mstr, "%lf",ra_m - floor(ra_m));
+    sprintf(ra_hstr, "%d",(int)floor(ra/15.0));
+    ra_m = (ra/15.0 - floor(ra/15.0))*60.0;
+    sprintf(ra_mstr, "%d",(int)floor(ra_m));
     ra_s = (ra_m - floor(ra_m))*60.0;
     sprintf(ra_sstr, "%lf",ra_s);
-    strcat(rastr,ra_hstr);
+    strcpy(rastr,ra_hstr);
     strcat(rastr,ra_mstr);
     strcat(rastr,ra_sstr);
     return atof(rastr);
@@ -49,12 +49,12 @@ double decdeg2dms(double dec)
     if (dec < 0.0)
     {
       float val = abs(dec); 
-      sprintf(dec_dstr, "%f",floor(val));
+      sprintf(dec_dstr, "%d",(int)floor(val));
       dec_m = (val - floor(val))*60.0;
-      sprintf(dec_mstr, "%lf",dec_m - floor(dec_m));
+      sprintf(dec_mstr, "%d",(int) floor(dec_m));
       dec_s = (dec_m - floor(dec_m))*60.0;
       sprintf(dec_sstr, "%lf",dec_s);
-      strcat(decstr,dec_dstr);
+      strcpy(decstr,dec_dstr);
       strcat(decstr,dec_mstr);
       strcat(decstr,dec_sstr);
       return -1.0*atof(decstr);
@@ -62,12 +62,12 @@ double decdeg2dms(double dec)
 
     else
     {
-      sprintf(dec_dstr, "%lf",floor(dec));
+      sprintf(dec_dstr, "%d", (int)floor(dec));
       dec_m = (dec - floor(dec))*60.0;
-      sprintf(dec_mstr, "%lf",dec_m - floor(dec_m));
+      sprintf(dec_mstr, "%d",(int)floor(dec_m));
       dec_s = (dec_m - floor(dec_m))*60.0;
       sprintf(dec_sstr, "%lf",dec_s);
-      strcat(decstr,dec_dstr);
+      strcpy(decstr,dec_dstr);
       strcat(decstr,dec_mstr);
       strcat(decstr,dec_sstr);
       return atof(decstr);

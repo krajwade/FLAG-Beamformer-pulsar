@@ -23,7 +23,7 @@ __global__ void reverseArrayBlockFloat(float *d_b , float *d_a )
  int old_id = blockDim.x * bx+ tx ;
 
 
-// GridDim.x gives no. of block in grid in X dimention
+// GridDim.x gives no. of block in grid in X dimension
  int new_id = (blockDim.x * gridDim.x) - 1 -  old_id ; 
 
  
@@ -46,11 +46,11 @@ __global__ void reverseArrayBlockNewFloat(float *d_b , float *d_a, int binsize, 
  } 
 
  }
- }
+}
 
 
 /* Qunatization GPU-based. Still debugging! */
-void run_quant(float* h_pfbuf,int nchans, unsigned char* h_pcbuf, int sample) 
+void run_quant(float* h_pfbuf,int nchans, unsigned char* h_pcbuf) 
 {
    int i;
    float fMin,fMax;
@@ -65,7 +65,7 @@ void run_quant(float* h_pfbuf,int nchans, unsigned char* h_pcbuf, int sample)
    
   /* find Min and max */
 
-   for (i = sample*nchans; i < (sample + 1)*nchans; ++i){
+   for (i = 0; i < nchans; ++i){
       if (h_pfbuf[i] > fMax)
            fMax = h_pfbuf[i];
       if (h_pfbuf[i] < fMin)
@@ -78,7 +78,7 @@ void run_quant(float* h_pfbuf,int nchans, unsigned char* h_pcbuf, int sample)
    cudaMalloc(&d_pfbuf, size_f);
    cudaMalloc(&d_pibuf, size_i);
 
-   float* ptr = h_pfbuf +  sample*nchans;
+   float* ptr = h_pfbuf;
 
    /* Copy vectors from host memory to device memory */
    cudaMemcpy(d_pfbuf, ptr, size_f, cudaMemcpyHostToDevice);
@@ -105,7 +105,7 @@ void run_quant(float* h_pfbuf,int nchans, unsigned char* h_pcbuf, int sample)
   
    checkCUDAError("kernel Invocation");
 
-   unsigned char* cptr = h_pcbuf + sample*nchans;
+   unsigned char* cptr = h_pcbuf;
    /* Copy result from device memory to host memory */
    /* h_z contains the result in host memory        */
    cudaMemcpy(h_pibuf, d_pibuf, size_i, cudaMemcpyDeviceToHost);
@@ -126,7 +126,7 @@ void run_quant(float* h_pfbuf,int nchans, unsigned char* h_pcbuf, int sample)
    return;
 } 
 
-void channel_flip_float( float* h_a, int size, int sample, int nchans)
+void channel_flip_float( float *h_a, int size, int nchans)
 {
     
     // pointer for device memory
@@ -152,7 +152,7 @@ void channel_flip_float( float* h_a, int size, int sample, int nchans)
 
     cudaEventRecord(start, 0);   // to start timing
     // Copy host array to device array
-    cudaMemcpy( d_a, h_a + sample*size, memSize, cudaMemcpyHostToDevice );
+    cudaMemcpy( d_a, h_a, memSize, cudaMemcpyHostToDevice );
 
 
 
@@ -170,7 +170,7 @@ void channel_flip_float( float* h_a, int size, int sample, int nchans)
     checkCUDAError("kernel invocation");
 
     // device to host copy
-    cudaMemcpy( h_a + sample*size, d_b, memSize, cudaMemcpyDeviceToHost );
+    cudaMemcpy( h_a, d_b, memSize, cudaMemcpyDeviceToHost );
 
     // Check for any CUDA errors
     checkCUDAError("memcpy");
